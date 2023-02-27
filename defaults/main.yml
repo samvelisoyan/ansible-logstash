@@ -25,13 +25,7 @@ logstash_configuration_files: {}
 
 logstash_disable_java18_openjdk_install: false
 
-logstash_service_name: logstash 
-
-# systemd service can be managed servicetools through (require servicetools role dependency) 
-logstash_disable_service_managed_by_servicetools: false
-
-# disabling service is started on change
-logstash_disable_auto_started_by_servicetools: false 
+logstash_service_name: logstash
 
 # custom JVM options
 logstash_jvm_options_heap_min: 256M
