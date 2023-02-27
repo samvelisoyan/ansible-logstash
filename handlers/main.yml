@@ -1,0 +1,15 @@
+---
+
+- name: restart logstash
+  become: yes
+  service: name="{{ logstash_service_name }}" state=restarted
+  when:
+    - ansible_user_id == "root"
+
+- name: stop and disable on boot logstash
+  service:
+    name: "{{ logstash_service_name }}"
+    state: stopped
+    enabled: false
+  when:
+    - ansible_user_id == "root"

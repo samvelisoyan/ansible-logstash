@@ -1,0 +1,38 @@
+---
+
+# Able to skip main tasks
+logstash_play: true
+
+# Proxiing settings
+logstash_disable_http_proxies: false
+logstash_https_proxy: http://proxy-prod-scl.svc.meshcore.net:3128
+logstash_http_proxy: http://proxy-prod-scl.svc.meshcore.net:3128
+
+# Installation
+logstash_disable_install: false
+logstash_version: '7.x'
+logstash_install_dir: /usr/share/logstash
+logstash_conf_dir: /etc/logstash
+logstash_local_syslog_path: /var/log/syslog
+logstash_enabled_on_boot: true
+logstash_install_plugins: []
+  #  - logstash-input-beats
+  #  - logstash-filter-multiline
+logstash_confd_dir: /etc/logstash/conf.d
+logstash_confd_file_user: www
+logstash_confd_file_group: server
+logstash_configuration_files: {}
+
+logstash_disable_java18_openjdk_install: false
+
+logstash_service_name: logstash 
+
+# systemd service can be managed servicetools through (require servicetools role dependency) 
+logstash_disable_service_managed_by_servicetools: false
+
+# disabling service is started on change
+logstash_disable_auto_started_by_servicetools: false 
+
+# custom JVM options
+logstash_jvm_options_heap_min: 256M
+logstash_jvm_options_heap_max: 1g

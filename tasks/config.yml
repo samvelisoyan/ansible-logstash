@@ -1,0 +1,77 @@
+---
+
+- name: Retrieve {{ logstash_confd_dir }} directory status
+  stat:
+    path: "{{ logstash_confd_dir }}"
+  register: confd_dir_path
+
+- name: Create directory {{ logstash_confd_dir }} by root user
+  file:
+    path: "{{ logstash_confd_dir }}"
+    state: directory
+    mode: 0755
+    owner: "{{ logstash_confd_file_user }}"
+    group: "{{ logstash_confd_file_group }}"
+  when:
+    #- confd_dir_path.stat is defined
+    #- not confd_dir_path.stat.exists
+    - ansible_user_id == 'root'
+
+- name: Check directory {{ logstash_confd_dir }} exists
+  fail:
+    msg: "{{ logstash_confd_dir }} : Such directory not Found"
+  when:
+    - confd_dir_path.stat is defined
+    - not confd_dir_path.stat.exists
+    - ansible_user_id != 'root'
+
+- name: Find existing Logstash configuration files ({{ logstash_confd_dir }}/*.conf)
+  find:
+    paths: "{{ logstash_confd_dir }}"
+    patterns: "*.conf"
+  register: confd_to_delete
+  changed_when: false
+
+- name: Display Logstash configuration files to delete
+  debug:
+    msg: "file={{ item.path }} owner:group={{ item.pw_name }}:{{ item.gr_name }} mode={{ item.mode }} to delete"
+  loop: "{{ confd_to_delete.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Delete all extraneous configuration files when user is root(current='{{ ansible_user_id }}')
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ confd_to_delete.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when:
+    - ansible_user_id == 'root'
+    - item.path not in logstash_expected_configuration_files
+
+- name: Delete only extraneous configuration files owned by non-root user(current='{{ ansible_user_id }}')
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ confd_to_delete.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when:
+    - item.pw_name == ansible_user_id
+    - ansible_user_id != 'root'
+    - item.path not in logstash_expected_configuration_files
+
+# we forces .conf extensionwith (splittext filter) , just in case
+- name: "Create Logstash configuration files"
+  copy:
+    content: "{{ logstash_configuration_files[item].content }}"
+    dest: "{{ logstash_confd_dir }}/{{ item | basename | splitext | first + '.conf' }}"
+    mode: 0644
+    owner: "{{ logstash_confd_file_user }}"
+    group: "{{ logstash_confd_file_group }}"
+  loop: "{{ logstash_configuration_files | list }}"
+  when: logstash_configuration_files[item].content is defined
+  notify:
+    - restart logstash
+    - restart_service logstash

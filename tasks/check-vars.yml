@@ -1,0 +1,28 @@
+---
+
+- name: Get proxies settings from environment variables
+  set_fact:
+    logstash_https_proxy: "{{ lookup('env', 'https_proxy') | default(logstash_https_proxy, True) }}"
+    logstash_http_proxy:  "{{ lookup('env', 'http_proxy')  | default(logstash_http_proxy, True) }}"
+  when: logstash_play
+
+- name: Disabling proxies from logstash data
+  set_fact:
+    logstash_https_proxy: ""
+    logstash_http_proxy:  ""
+  when:
+    - logstash_play
+    - logstash_disable_http_proxies
+
+- name: Display proxies settings to use
+  debug:
+    msg: "https_proxy={{ logstash_https_proxy }}, http_proxy={{ logstash_http_proxy }}"
+  when: logstash_play
+
+- name: Check vars | Sanitize Logstash configuration files extensions
+  set_fact:
+    logstash_expected_configuration_files: "{{ logstash_expected_configuration_files | default([]) + [ logstash_conf_file ] }}"
+  loop: "{{ logstash_configuration_files | list }}"
+  vars:
+    logstash_conf_file: "{{ logstash_confd_dir }}/{{ item | basename | splitext | first + '.conf' }}"
+  when: logstash_play

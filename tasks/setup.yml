@@ -1,0 +1,37 @@
+---
+
+- name: Add Elasticsearch GPG key
+  rpm_key:
+    key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  environment:
+    - https_proxy: "{{ logstash_https_proxy }}"
+    - http_proxy: "{{ logstash_http_proxy }}"
+
+- name: Add Logstash repository
+  template:
+    src: logstash.repo.j2
+    dest: /etc/yum.repos.d/logstash.repo
+    mode: 0644
+
+- name: Install java-1.8.0-openjdk package (disabling package install={{ logstash_disable_java18_openjdk_install }})
+  action: >
+    {{ ansible_pkg_mgr }} name='java-1.8.0-openjdk' state=present enablerepo={{ logstash_enablerepo | default(omit,true) }}
+  when: not logstash_disable_java18_openjdk_install
+
+- name: Install Logstash (disabling package install={{ logstash_disable_install }})
+  action: >
+    {{ ansible_pkg_mgr }} name='{{ logstash_package }}' state=present enablerepo={{ logstash_enablerepo | default(omit,true) }}
+  when: not ansible_check_mode
+#  notify:
+#    - stop and disable on boot logstash
+
+- name: Set path.conf={{ logstash_confd_dir }}/*.conf in file {{ logstash_conf_dir }}/pipelines.yml
+  template:
+    src: pipelines.yml.j2
+    dest: "{{ logstash_conf_dir }}/pipelines.yml"
+
+- name: Set Custom jvm options ({{ logstash_conf_dir }}/jvm.options)
+  template:
+    src: jvm.options.j2
+    dest: "{{ logstash_conf_dir }}/jvm.options"

@@ -1,0 +1,30 @@
+---
+
+- name: Checking vars tasks
+  import_tasks: check-vars.yml
+
+- name: Include setup tasks (requires user with root rights in order to run)
+  include: setup.yml
+  when:
+    - ansible_user_id == "root"
+    - not logstash_disable_install
+
+#- name: Flush handlers
+#  meta: flush_handlers
+
+- include: config.yml
+  when: logstash_play
+
+- include: plugins.yml
+  when:
+    - ansible_user_id == "root"
+    - not logstash_disable_install
+
+- name: Ensure Logstash is started and enabled on boot
+  service:
+    name: "{{ logstash_service_name }}"
+    state: started
+    enabled: "{{ logstash_enabled_on_boot }}"
+  when:
+    - ansible_user_id == "root"
+    - not logstash_disable_install

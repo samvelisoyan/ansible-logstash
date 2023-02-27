@@ -1,0 +1,5 @@
+---
+# vars file for logstash admin settings
+
+logstash_package: logstash
+logstash_local_syslog_path: /var/log/syslog
